@@ -2,6 +2,19 @@ import numpy as np
 import cv2
 from mathUtils import get_dist
 
+def add_transparent_image(bg, ov, x, y):
+    x-=int(ov.shape[0]/2)
+    y-=int(ov.shape[1]/2)
+    w = x + ov.shape[0]
+    h = y + ov.shape[1]
+
+    alpha_ov = ov[:, :, 3] / 255.0
+
+    alpha_bg = 1.0 - alpha_ov
+
+    for c in range(0, 3):
+        bg[x:w, y:h, c] = (ov[:, :, c] * alpha_ov + bg[x:w, y:h, c] * alpha_bg)
+
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 camera = cv2.VideoCapture(0)
@@ -24,7 +37,6 @@ while True:
                 eyes_list.append(oko)
 
         if len(eyes_list)==2:
-            pass
 
 
     cv2.imshow("img", img)
