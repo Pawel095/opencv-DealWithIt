@@ -41,9 +41,11 @@ while True:
                 eyes_list.append(oko)
 
         if len(eyes_list)==2:
+            scale= get_dist(eyes_list) / (225*0.7)
+            scaledGlasses=cv2.resize(glasses,None,fx=scale,fy=scale,interpolation=cv2.INTER_LINEAR)
             center_x=(eyes_list[0][0]+eyes_list[1][0])/2
             center_y=(eyes_list[0][1]+eyes_list[1][1])/2
-            add_transparent_image(img, glasses, int(y + center_y), int(x + center_x))
+            add_transparent_image(img, scaledGlasses, int(y + center_y), int(x + center_x))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
