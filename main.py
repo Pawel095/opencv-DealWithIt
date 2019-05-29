@@ -15,6 +15,10 @@ def add_transparent_image(bg, ov, x, y):
     for c in range(0, 3):
         bg[x:w, y:h, c] = (ov[:, :, c] * alpha_ov + bg[x:w, y:h, c] * alpha_bg)
 
+
+glasses = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
+glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 camera = cv2.VideoCapture(0)
@@ -37,7 +41,9 @@ while True:
                 eyes_list.append(oko)
 
         if len(eyes_list)==2:
-
+            center_x=(eyes_list[0][0]+eyes_list[1][0])/2
+            center_y=(eyes_list[0][1]+eyes_list[1][1])/2
+            add_transparent_image(img, glasses, int(y + center_y), int(x + center_x))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
