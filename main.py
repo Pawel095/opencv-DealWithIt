@@ -1,10 +1,12 @@
 import numpy as np
 import cv2
+import math
 from mathUtils import get_dist
 
+
 def add_transparent_image(bg, ov, x, y):
-    x-=int(ov.shape[0]/2)
-    y-=int(ov.shape[1]/2)
+    x -= int(ov.shape[0] / 2)
+    y -= int(ov.shape[1] / 2)
     w = x + ov.shape[0]
     h = y + ov.shape[1]
 
@@ -40,12 +42,17 @@ while True:
                 oko.append(ey + eh / 2)
                 eyes_list.append(oko)
 
-        if len(eyes_list)==2:
-            scale= get_dist(eyes_list) / (225*0.7)
-            scaledGlasses=cv2.resize(glasses,None,fx=scale,fy=scale,interpolation=cv2.INTER_LINEAR)
-            center_x=(eyes_list[0][0]+eyes_list[1][0])/2
-            center_y=(eyes_list[0][1]+eyes_list[1][1])/2
-            add_transparent_image(img, scaledGlasses, int(y + center_y), int(x + center_x))
+        if len(eyes_list) == 2:
+            scale = get_dist(eyes_list) / (225 * 0.7)
+            angle = math.radians(math.atan(eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0]))
+            print("angle: " + angle.__str__())
+            scaledGlasses = cv2.resize(glasses, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
+            w, h = scaledGlasses.shape[:2]
+            m=cv2.getRotationMatrix2D((w/2,h/2),angle,1)
+            rotatedglasses = cv2.warpAffine(scaledGlasses,m,(w,h))
+            center_x = (eyes_list[0][0] + eyes_list[1][0]) / 2
+            center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
+            add_transparent_image(img, rotatedglasses, int(y + center_y), int(x + center_x))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
