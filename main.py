@@ -23,7 +23,7 @@ def add_transparent_image(bg, ov, x, y):
 
 
 glasses = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
-glasses = cv2.resize(glasses, None, fx=0.4, fy=0.4, interpolation=cv2.INTER_LINEAR)
+glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
 
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
