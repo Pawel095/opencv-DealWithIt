@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 import math
+import imutils
 from mathUtils import get_dist
 
 
@@ -15,11 +16,14 @@ def add_transparent_image(bg, ov, x, y):
     alpha_bg = 1.0 - alpha_ov
 
     for c in range(0, 3):
-        bg[x:w, y:h, c] = (ov[:, :, c] * alpha_ov + bg[x:w, y:h, c] * alpha_bg)
+        try:
+            bg[x:w, y:h, c] = (ov[:, :, c] * alpha_ov + bg[x:w, y:h, c] * alpha_bg)
+        except:
+            pass
 
 
 glasses = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
-glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+glasses = cv2.resize(glasses, None, fx=0.4, fy=0.4, interpolation=cv2.INTER_LINEAR)
 
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
@@ -43,16 +47,16 @@ while True:
                 eyes_list.append(oko)
 
         if len(eyes_list) == 2:
-            scale = get_dist(eyes_list) / (225 * 0.7)
-            angle = math.radians(math.atan(eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0]))
-            print("angle: " + angle.__str__())
+            scale = get_dist(eyes_list) / (225*0.7)
+            tanTheta = (eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0])
+            angle = math.degrees(math.atan(tanTheta))
+
             scaledGlasses = cv2.resize(glasses, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
-            w, h = scaledGlasses.shape[:2]
-            m=cv2.getRotationMatrix2D((w/2,h/2),angle,1)
-            rotatedglasses = cv2.warpAffine(scaledGlasses,m,(w,h))
-            center_x = (eyes_list[0][0] + eyes_list[1][0]) / 2
-            center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
-            add_transparent_image(img, rotatedglasses, int(y + center_y), int(x + center_x))
+            rotatedGlasses = imutils.rotate_bound(scaledGlasses, angle)
+
+            center_x = (eyes_list[0][0] + eyes_list[1][0])/2
+            center_y = (eyes_list[0][1] + eyes_list[1][1])/2
+            add_transparent_image(img,rotatedGlasses, int(y + center_y), int(x + center_x))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
