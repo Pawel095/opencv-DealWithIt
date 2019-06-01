@@ -27,6 +27,8 @@ glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINE
 
 lastKnownScale = 1
 lastKnownAngle = 0
+lastKnownX = 0
+lastKnownY = 0
 
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
@@ -42,24 +44,30 @@ while True:
         eyes = eye_cascade.detectMultiScale(face_grey, 1.3, 4)
         eyes_list = list()
         for (ex, ey, ew, eh) in eyes:
-            cv2.rectangle(face_color, (ex, ey), (ex + ew, ey + eh), (0, 255, 0), 2)
             if len(eyes) == 2:
                 oko = list()
                 oko.append(ex + ew / 2)
                 oko.append(ey + eh / 2)
                 eyes_list.append(oko)
 
+        # jeżeli jedna para i różnica y jest poniżej 40.
         if len(eyes_list) == 2:
-            scale = get_dist(eyes_list) / (225 * 0.7)
-            tanTheta = (eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0])
-            angle = math.degrees(math.atan(tanTheta))
+            deltaY = abs(eyes_list[0][1] - eyes_list[1][1])
+            if deltaY < 40:
+                lastKnownScale = get_dist(eyes_list) / (225 * 0.7)
+                tanTheta = (eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0])
+                lastKnownAngle = math.degrees(math.atan(tanTheta))
 
-            scaledGlasses = cv2.resize(glasses, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
-            rotatedGlasses = imutils.rotate_bound(scaledGlasses, angle)
+                center_x = (eyes_list[0][0] + eyes_list[1][0]) / 2
+                center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
+                lastKnownX = int(x + center_x)
+                lastKnownY = int(y + center_y)
+                cv2.circle(img, (int(eyes_list[0][0]), int(eyes_list[0][1])), 20, (0, 255, 0), 1)
+                cv2.circle(img, (int(eyes_list[1][0]), int(eyes_list[1][1])), 20, (0, 255, 0), 1)
 
-            center_x = (eyes_list[0][0] + eyes_list[1][0]) / 2
-            center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
-            add_transparent_image(img, rotatedGlasses, int(y + center_y), int(x + center_x))
+    scaledGlasses = cv2.resize(glasses, None, fx=lastKnownScale, fy=lastKnownScale, interpolation=cv2.INTER_LINEAR)
+    rotatedGlasses = imutils.rotate_bound(scaledGlasses, lastKnownAngle)
+    add_transparent_image(img, rotatedGlasses, int(lastKnownY), int(lastKnownX))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
