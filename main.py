@@ -25,6 +25,9 @@ def add_transparent_image(bg, ov, x, y):
 glasses = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
 glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
 
+lastKnownScale = 1
+lastKnownAngle = 0
+
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 camera = cv2.VideoCapture(0)
@@ -47,16 +50,16 @@ while True:
                 eyes_list.append(oko)
 
         if len(eyes_list) == 2:
-            scale = get_dist(eyes_list) / (225*0.7)
+            scale = get_dist(eyes_list) / (225 * 0.7)
             tanTheta = (eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0])
             angle = math.degrees(math.atan(tanTheta))
 
             scaledGlasses = cv2.resize(glasses, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR)
             rotatedGlasses = imutils.rotate_bound(scaledGlasses, angle)
 
-            center_x = (eyes_list[0][0] + eyes_list[1][0])/2
-            center_y = (eyes_list[0][1] + eyes_list[1][1])/2
-            add_transparent_image(img,rotatedGlasses, int(y + center_y), int(x + center_x))
+            center_x = (eyes_list[0][0] + eyes_list[1][0]) / 2
+            center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
+            add_transparent_image(img, rotatedGlasses, int(y + center_y), int(x + center_x))
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
