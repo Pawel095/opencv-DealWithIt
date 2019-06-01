@@ -4,9 +4,10 @@ def get_dist(e):
     return math.sqrt(pow(e[0][0] - e[1][0], 2) + pow(e[0][1] - e[1][1], 2))
 
 def approach(val,desired,step):
-    """slowly approaches a value. every execution: val+=abs(desired - val)*step
+    """slowly approaches a value. every execution: val will be closer to desired
     :argument val The value that will be modified approach
     :argument desired The value to approach
     :argument step (0,1] the closet this is to 1 the faster val will almost equal desired."""
-    val+=abs(desired-val)*step
-    return val;
+    delta=(desired-val)*step
+    val+=delta
+    return val

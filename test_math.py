@@ -10,6 +10,14 @@ class TestMath(unittest.TestCase):
     def test_approach(self):
         from mathUtils import approach
         val=0
+        desired=-5
+        step=0.5
+        val=approach(val,desired,step)
+        self.assertAlmostEqual(val,-2.5)
+        val = approach(val, desired, step)
+        self.assertAlmostEqual(val,-3.75)
+
+        val=0
         desired=5
         step=0.5
         val=approach(val,desired,step)
