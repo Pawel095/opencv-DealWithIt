@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 import math
 import imutils
-from mathUtils import get_dist
+from mathUtils import get_dist, approach
 
 
 def add_transparent_image(bg, ov, x, y):
@@ -22,14 +22,52 @@ def add_transparent_image(bg, ov, x, y):
             pass
 
 
-glasses = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
-glasses = cv2.resize(glasses, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+class overlay:
+    maxFramesOutOfImage = 20
+    framesOutOfImage = 0
+    #                  x, y
+    desiredPosition = (0, 0)
+    currentPosition = (0, 0)
 
-lastKnownScale = 1
-lastKnownAngle = 0
-lastKnownX = 0
-lastKnownY = 0
+    #            rot, scl
+    desiredWarp = (0, 0)
+    currentWarp = (0, 0)
 
+    def __init__(self):
+        self.img = cv2.imread("glasses.png", cv2.IMREAD_UNCHANGED)
+        self.img = cv2.resize(self.img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+
+    def draw(self, background):
+        if self.framesOutOfImage<self.maxFramesOutOfImage:
+            self.currentWarp[0] = approach(self.currentWarp[0], self.desiredWarp[0], 3 / 4)
+            self.currentWarp[1] = approach(self.currentWarp[1], self.desiredWarp[1], 3 / 4)
+
+            self.currentPosition[0] = approach(self.currentPosition[0], self.desiredPosition[0], 3 / 5)
+            self.currentPosition[1] = approach(self.currentPosition[1], self.desiredPosition[1], 3 / 5)
+
+            scaledGlasses = cv2.resize(glasses, None, fx=self.currentWarp[1], fy=self.currentWarp[1],
+                                       interpolation=cv2.INTER_LINEAR)
+            rotatedGlasses = imutils.rotate_bound(scaledGlasses, self.currentWarp[0])
+
+            add_transparent_image(background, self.img, self.currentPosition[0], self.currentPosition[1])
+            return 0
+        else:
+            print("Out Of Image timeout, prompting...")
+            return -1
+    def notVisible(self):
+        if self.framesOutOfImage<self.maxFramesOutOfImage:
+            self.framesOutOfImage+=1;
+            return 0
+        else:
+            print("notVisible() timeout, prompting...")
+            return -1
+
+    def setattr(self, pos, warp):
+        self.currentPosition = pos
+        self.currentWarp = warp
+
+
+glasses = list()
 face_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
 eye_cascade = cv2.CascadeClassifier('haarcascade_eye.xml')
 camera = cv2.VideoCapture(0)
@@ -37,8 +75,15 @@ while True:
     ret, img = camera.read()
     grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(grey, 1.3, 5)
-    for (x, y, w, h) in faces:
+    for i, (x, y, w, h) in enumerate(faces):
+
+        # if overlay not existing then create
+        if not i<len(glasses):
+            print("creating "+i.__str__())
+            glasses.append(overlay())
+
         cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        cv2.putText(img, i.__str__(), (x, y+25), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255))
         face_grey = grey[y:y + h, x:x + w]
         face_color = img[y:y + h, x:x + w]
         eyes = eye_cascade.detectMultiScale(face_grey, 1.3, 4)
@@ -50,10 +95,11 @@ while True:
                 oko.append(ey + eh / 2)
                 eyes_list.append(oko)
 
-        # jeżeli jedna para i różnica y jest poniżej 40.
+        # jeżeli jedna para i różnica y jest poniżej 30.
         if len(eyes_list) == 2:
             deltaY = abs(eyes_list[0][1] - eyes_list[1][1])
-            if deltaY < 40:
+            # print(deltaY)
+            if deltaY < 30:
                 lastKnownScale = get_dist(eyes_list) / (225 * 0.7)
                 tanTheta = (eyes_list[0][1] - eyes_list[1][1]) / (eyes_list[0][0] - eyes_list[1][0])
                 lastKnownAngle = math.degrees(math.atan(tanTheta))
@@ -62,12 +108,12 @@ while True:
                 center_y = (eyes_list[0][1] + eyes_list[1][1]) / 2
                 lastKnownX = int(x + center_x)
                 lastKnownY = int(y + center_y)
+                # TODO tutaj sterowanie glasses
+
                 cv2.circle(img, (int(eyes_list[0][0]), int(eyes_list[0][1])), 20, (0, 255, 0), 1)
                 cv2.circle(img, (int(eyes_list[1][0]), int(eyes_list[1][1])), 20, (0, 255, 0), 1)
 
-    scaledGlasses = cv2.resize(glasses, None, fx=lastKnownScale, fy=lastKnownScale, interpolation=cv2.INTER_LINEAR)
-    rotatedGlasses = imutils.rotate_bound(scaledGlasses, lastKnownAngle)
-    add_transparent_image(img, rotatedGlasses, int(lastKnownY), int(lastKnownX))
+        # todo tutaj render glasses
 
     cv2.imshow("img", img)
     k = cv2.waitKey(30) & 0xff
